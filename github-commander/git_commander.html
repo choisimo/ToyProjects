@@ -1,0 +1,1102 @@
+<!DOCTYPE html>
+<html lang="ko">
+
+<head>
+    <meta charset="UTF-PM_REPLACED_0">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>대화형 Git 명령어 가이드 (Gemini API 통합)</title>
+    <script src="https://cdn.tailwindcss.com"></script>
+    <style>
+        body {
+            font-family: 'Inter', sans-serif;
+            background-color: #fdfaf6;
+        }
+
+        .sidebar-bg {
+            background-color: #e0e7e9;
+        }
+
+        .active-link {
+            background-color: #00796b;
+            color: white;
+        }
+
+        .search-bar-bg {
+            background-color: #ffffff;
+        }
+
+        .command-card,
+        .qa-card,
+        .ai-card {
+            background-color: #ffffff;
+            border: 1px solid #e5e7eb;
+        }
+
+        .code-block {
+            background-color: #f3f4f6;
+            border-left: 3px solid #00796b;
+        }
+
+        .example-note {
+            color: #4b5563;
+            font-size: 0.875rem;
+            margin-bottom: 0.25rem;
+        }
+
+        .copy-btn,
+        .ai-btn {
+            background-color: #00796b;
+            color: white;
+        }
+
+        .copy-btn:hover,
+        .ai-btn:hover {
+            background-color: #005a4f;
+        }
+
+        .error-section h5 {
+            color: #c81e1e;
+        }
+
+        .solution-section h5 {
+            color: #047857;
+        }
+
+        ::-webkit-scrollbar {
+            width: 8px;
+            height: 8px;
+        }
+
+        ::-webkit-scrollbar-track {
+            background: #fdfaf6;
+        }
+
+        ::-webkit-scrollbar-thumb {
+            background: #c7d2fe;
+            border-radius: 4px;
+        }
+
+        ::-webkit-scrollbar-thumb:hover {
+            background: #a5b4fc;
+        }
+
+        .table-of-contents ul ul {
+            padding-left: 1rem;
+        }
+
+        .table-of-contents li {
+            margin-bottom: 0.25rem;
+        }
+
+        .table-of-contents a {
+            transition: color 0.2s;
+        }
+
+        .table-of-contents a:hover {
+            color: #00796b;
+        }
+
+        .fade-in {
+            animation: fadeIn 0.5s ease-out;
+        }
+
+        @keyframes fadeIn {
+            from {
+                opacity: 0;
+                transform: translateY(10px);
+            }
+
+            to {
+                opacity: 1;
+                transform: translateY(0);
+            }
+        }
+
+        .sticky-header {
+            position: sticky;
+            top: 0;
+            z-index: 40;
+        }
+
+        .loader {
+            border: 4px solid #f3f3f3;
+            border-top: 4px solid #00796b;
+            border-radius: 50%;
+            width: 24px;
+            height: 24px;
+            animation: spin 1s linear infinite;
+            margin: 5px auto;
+        }
+
+        @keyframes spin {
+            0% {
+                transform: rotate(0deg);
+            }
+
+            100% {
+                transform: rotate(360deg);
+            }
+        }
+
+        .gemini-output {
+            background-color: #e6fffa;
+            border-left: 4px solid #38b2ac;
+            padding: 10px;
+            margin-top: 10px;
+            border-radius: 4px;
+            font-size: 0.9em;
+        }
+    </style>
+</head>
+
+<body class="text-gray-800">
+    <div class="flex flex-col md:flex-row min-h-screen">
+        <header
+            class="md:hidden sticky-header top-0 bg-slate-700 text-white p-4 flex justify-between items-center shadow-md">
+            <h1 class="text-xl font-semibold">Git 명령어 가이드</h1>
+            <button id="mobileMenuButton"
+                class="p-2 rounded-md focus:outline-none focus:ring-2 focus:ring-inset focus:ring-white">
+                <svg class="h-6 w-6" fill="none" viewBox="0 0 24 24" stroke="currentColor">
+                    <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M4 6h16M4 12h16m-7 6h7" />
+                </svg>
+            </button>
+        </header>
+
+        <aside id="sidebar"
+            class="sidebar-bg w-full md:w-64 lg:w-72 space-y-6 py-7 px-2 absolute inset-y-0 left-0 transform -translate-x-full md:relative md:translate-x-0 transition-transform duration-200 ease-in-out shadow-lg md:sticky md:top-0 md:self-start md:h-screen overflow-y-auto z-30">
+            <div class="px-4 mb-4">
+                <h2 class="text-2xl font-bold text-slate-700 hidden md:block">Git 명령어</h2>
+                <p class="text-sm text-slate-600 mt-1 hidden md:block">주요 Git 명령어를 빠르게 찾아보세요.</p>
+            </div>
+            <nav id="tableOfContents" class="table-of-contents px-4">
+            </nav>
+        </aside>
+
+        <main class="flex-1 p-6 sm:p-8 md:p-10 overflow-y-auto">
+            <div class="max-w-4xl mx-auto">
+                <div class="sticky-header top-0 md:top-0 py-4 bg-fdfaf6/80 backdrop-blur-md mb-6 z-20">
+                    <input type="text" id="searchInput" placeholder="명령어 또는 문제점 검색... (예: commit, non-fast-forward)"
+                        class="w-full p-3 rounded-lg border border-gray-300 shadow-sm focus:ring-2 focus:ring-00796b focus:border-00796b transition-shadow search-bar-bg">
+                </div>
+
+                <div id="commandsContainer" class="space-y-8">
+                </div>
+                <div id="noResults" class="text-center py-10 text-gray-500 hidden">
+                    <svg class="mx-auto h-12 w-12 text-gray-400" fill="none" viewBox="0 0 24 24" stroke="currentColor"
+                        aria-hidden="true">
+                        <path vector-effect="non-scaling-stroke" stroke-linecap="round" stroke-linejoin="round"
+                            stroke-width="2"
+                            d="M12 9v3.75m9-.75a9 9 0 11-18 0 9 9 0 0118 0zm-9 3.75h.008v.008H12v-.008z" />
+                    </svg>
+                    <h3 class="mt-2 text-sm font-medium text-gray-900">검색 결과 없음</h3>
+                    <p class="mt-1 text-sm text-gray-500">다른 키워드로 검색해보세요.</p>
+                </div>
+            </div>
+        </main>
+    </div>
+
+    <!-- AI Provider Selection UI -->
+    <div id="ai-provider-settings" class="fixed bottom-4 right-4 bg-white border border-gray-300 rounded-lg shadow-lg p-4 z-50 max-w-xs">
+        <div class="mb-2">
+            <label for="aiProvider" class="block text-sm font-medium text-gray-700">AI Provider 선택</label>
+            <select id="aiProvider" class="mt-1 block w-full p-2 border border-gray-300 rounded-md">
+                <option value="gemini">Gemini (Google)</option>
+                <option value="openai">OpenAI (GPT)</option>
+                <option value="perplexity">Perplexity</option>
+            </select>
+        </div>
+        <div id="apiKeyFields">
+            <div id="geminiKeyField" class="hidden mb-2">
+                <label for="geminiApiKey" class="block text-xs text-gray-600">Gemini API Key</label>
+                <input id="geminiApiKey" type="text" class="mt-1 block w-full p-1 border border-gray-200 rounded-md text-xs" placeholder="(필요시 입력)" />
+            </div>
+            <div id="openaiKeyField" class="hidden mb-2">
+                <label for="openaiApiKey" class="block text-xs text-gray-600">OpenAI API Key</label>
+                <input id="openaiApiKey" type="text" class="mt-1 block w-full p-1 border border-gray-200 rounded-md text-xs" placeholder="sk-..." />
+            </div>
+            <div id="perplexityKeyField" class="hidden mb-2">
+                <label for="perplexityApiKey" class="block text-xs text-gray-600">Perplexity API Key</label>
+                <input id="perplexityApiKey" type="text" class="mt-1 block w-full p-1 border border-gray-200 rounded-md text-xs" placeholder="pk-..." />
+            </div>
+        </div>
+        <div class="text-xs text-gray-400 mt-1">* API Key는 브라우저에만 저장됩니다.</div>
+    </div>
+
+    <script>
+        // --- AI Provider Selection Logic ---
+        function updateApiKeyFields() {
+            const provider = document.getElementById('aiProvider').value;
+            document.getElementById('geminiKeyField').style.display = provider === 'gemini' ? 'block' : 'none';
+            document.getElementById('openaiKeyField').style.display = provider === 'openai' ? 'block' : 'none';
+            document.getElementById('perplexityKeyField').style.display = provider === 'perplexity' ? 'block' : 'none';
+        }
+        document.getElementById('aiProvider').addEventListener('change', updateApiKeyFields);
+        updateApiKeyFields();
+
+        // --- API Key Storage (localStorage) ---
+        function getApiKey(provider) {
+            if (provider === 'gemini') {
+                return document.getElementById('geminiApiKey').value || localStorage.getItem('geminiApiKey') || '';
+            } else if (provider === 'openai') {
+                return document.getElementById('openaiApiKey').value || localStorage.getItem('openaiApiKey') || '';
+            } else if (provider === 'perplexity') {
+                return document.getElementById('perplexityApiKey').value || localStorage.getItem('perplexityApiKey') || '';
+            }
+            return '';
+        }
+        // Save API keys on input
+        document.getElementById('geminiApiKey').addEventListener('input', e => localStorage.setItem('geminiApiKey', e.target.value));
+        document.getElementById('openaiApiKey').addEventListener('input', e => localStorage.setItem('openaiApiKey', e.target.value));
+        document.getElementById('perplexityApiKey').addEventListener('input', e => localStorage.setItem('perplexityApiKey', e.target.value));
+        // Load keys on page load
+        document.getElementById('geminiApiKey').value = localStorage.getItem('geminiApiKey') || '';
+        document.getElementById('openaiApiKey').value = localStorage.getItem('openaiApiKey') || '';
+        document.getElementById('perplexityApiKey').value = localStorage.getItem('perplexityApiKey') || '';
+
+        // --- Multi-Provider AI Call Logic ---
+        async function callGeminiAPI(promptText, apiKey) {
+            apiKey = apiKey || getApiKey('gemini');
+            const apiUrl = `https://generativelanguage.googleapis.com/v1beta/models/gemini-2.0-flash:generateContent?key=${apiKey}`;
+            const payload = {
+                contents: [{ role: "user", parts: [{ text: promptText }] }]
+            };
+            try {
+                const response = await fetch(apiUrl, {
+                    method: 'POST',
+                    headers: { 'Content-Type': 'application/json' },
+                    body: JSON.stringify(payload)
+                });
+                if (!response.ok) {
+                    const errorBody = await response.text();
+                    throw new Error(`Gemini API Error: ${errorBody}`);
+                }
+                const result = await response.json();
+                if (result.candidates && result.candidates[0]?.content?.parts?.[0]?.text) {
+                    return result.candidates[0].content.parts[0].text;
+                }
+                return "죄송합니다. Gemini AI로부터 응답을 받지 못했습니다.";
+            } catch (error) {
+                return `Gemini API 오류: ${error.message}`;
+            }
+        }
+        async function callOpenAIAPI(promptText, apiKey) {
+            apiKey = apiKey || getApiKey('openai');
+            const apiUrl = "https://api.openai.com/v1/chat/completions";
+            const payload = {
+                model: "gpt-3.5-turbo",
+                messages: [{ role: "user", content: promptText }],
+                max_tokens: 512,
+                temperature: 0.7
+            };
+            try {
+                const response = await fetch(apiUrl, {
+                    method: 'POST',
+                    headers: {
+                        'Content-Type': 'application/json',
+                        'Authorization': `Bearer ${apiKey}`
+                    },
+                    body: JSON.stringify(payload)
+                });
+                if (!response.ok) {
+                    const errorBody = await response.text();
+                    throw new Error(`OpenAI API Error: ${errorBody}`);
+                }
+                const result = await response.json();
+                if (result.choices && result.choices[0]?.message?.content) {
+                    return result.choices[0].message.content.trim();
+                }
+                return "죄송합니다. OpenAI로부터 응답을 받지 못했습니다.";
+            } catch (error) {
+                return `OpenAI API 오류: ${error.message}`;
+            }
+        }
+        async function callPerplexityAPI(promptText, apiKey) {
+            apiKey = apiKey || getApiKey('perplexity');
+            const apiUrl = "https://api.perplexity.ai/chat/completions";
+            const payload = {
+                model: "pplx-70b-online",
+                messages: [{ role: "user", content: promptText }],
+                max_tokens: 512,
+                temperature: 0.7
+            };
+            try {
+                const response = await fetch(apiUrl, {
+                    method: 'POST',
+                    headers: {
+                        'Content-Type': 'application/json',
+                        'Authorization': `Bearer ${apiKey}`
+                    },
+                    body: JSON.stringify(payload)
+                });
+                if (!response.ok) {
+                    const errorBody = await response.text();
+                    throw new Error(`Perplexity API Error: ${errorBody}`);
+                }
+                const result = await response.json();
+                if (result.choices && result.choices[0]?.message?.content) {
+                    return result.choices[0].message.content.trim();
+                }
+                return "죄송합니다. Perplexity로부터 응답을 받지 못했습니다.";
+            } catch (error) {
+                return `Perplexity API 오류: ${error.message}`;
+            }
+        }
+        async function callAIProvider(promptText) {
+            const provider = document.getElementById('aiProvider').value;
+            if (provider === 'gemini') {
+                return await callGeminiAPI(promptText);
+            } else if (provider === 'openai') {
+                return await callOpenAIAPI(promptText);
+            } else if (provider === 'perplexity') {
+                return await callPerplexityAPI(promptText);
+            }
+            return 'AI Provider 선택이 잘못되었습니다.';
+        }
+
+        // --- 기존 데이터 및 함수 ---
+        const gitCommandsData = [
+            {
+                id: "basic-setup",
+                title: "1. 기본 설정 및 시작",
+                description: "Git을 처음 사용하거나 새 프로젝트를 시작할 때 필요한 기본 설정 및 초기화 명령어들입니다.",
+                commands: [
+                    {
+                        name: "git config",
+                        summary: "Git 사용자의 이름과 이메일 주소를 설정합니다. 커밋 기록에 사용됩니다.",
+                        use_case: "Git을 처음 설치하고 사용자 정보를 설정해야 할 때, 또는 프로젝트별로 다른 사용자 정보를 사용하고 싶을 때 사용합니다.",
+                        examples: [
+                            { code: 'git config --global user.name "내이름"', note: "전역으로 사용자 이름 설정 (모든 로컬 리포지토리에 적용)" },
+                            { code: 'git config --global user.email "내이메일@example.com"', note: "전역으로 사용자 이메일 설정" },
+                            { code: 'git config user.name "프로젝트용이름"', note: "현재 프로젝트에만 다른 이름 설정 (리포지토리 내에서 실행)" },
+                            { code: 'git config user.email "프로젝트용이메일@example.com"', note: "현재 프로젝트에만 다른 이메일 설정" },
+                            { code: 'git config --list', note: "현재 적용된 모든 설정 확인" },
+                            { code: 'git config --global --unset user.name', note: "전역 사용자 이름 설정 제거" }
+                        ]
+                    },
+                    {
+                        name: "git init",
+                        summary: "현재 디렉토리에 새로운 Git 리포지토리를 생성합니다. `.git`이라는 숨김 폴더가 만들어집니다.",
+                        use_case: "새로운 프로젝트를 시작하거나, 기존 프로젝트를 Git으로 관리하고 싶을 때 사용합니다.",
+                        examples: [
+                            { code: "mkdir my-new-project\ncd my-new-project\ngit init", note: "'my-new-project' 디렉토리를 만들고 Git 리포지토리로 초기화" },
+                            { code: "git init my-existing-project", note: "이미 존재하는 'my-existing-project' 디렉토리를 Git 리포지토리로 초기화 (해당 디렉토리 바깥에서 실행)" },
+                            { code: "git init --bare my-remote-repo.git", note: "작업 디렉토리(워킹트리)가 없는 순수 리포지토리 생성 (주로 서버에서 중앙 저장소로 사용)" }
+                        ]
+                    },
+                    {
+                        name: "git clone [원격 저장소 주소]",
+                        summary: "원격 저장소(예: GitHub)에 있는 리포지토리를 내 컴퓨터로 복제합니다.",
+                        use_case: "이미 GitHub 등에 존재하는 프로젝트에 참여하거나 코드를 내려받고 싶을 때 사용합니다.",
+                        examples: [
+                            { code: "git clone https://github.com/user/repository.git", note: "HTTPS 방식으로 리포지토리 복제" },
+                            { code: "git clone git@github.com:user/repository.git my-app", note: "SSH 방식으로 'my-app'이라는 다른 이름의 폴더로 복제 (미리 SSH 키 설정 필요)" },
+                            { code: "git clone -b develop https://github.com/user/repository.git", note: "특정 브랜치(develop)를 바로 복제" },
+                            { code: "git clone --depth 1 https://github.com/user/repository.git", note: "가장 최근 커밋 1개만 가져와서 가볍게 복제 (히스토리 불필요 시)" }
+                        ],
+                        errors_qa: [
+                            {
+                                scenario: "오류: Repository not found. / Permission denied (publickey).",
+                                cause: "URL이 잘못되었거나, 비공개 리포지토리에 접근 권한이 없거나, SSH 키 설정이 잘못된 경우 발생합니다.",
+                                solution_steps: [
+                                    "1. 복제하려는 리포지토리의 URL이 정확한지 다시 확인합니다. (HTTPS, SSH 주소 확인)",
+                                    "2. 비공개 리포지토리인 경우, 해당 리포지토리에 대한 접근 권한(읽기 권한)이 있는지 GitHub/GitLab 등에서 확인합니다.",
+                                    "3. SSH 방식으로 복제하는 경우, 로컬 컴퓨터에 SSH 키가 생성되어 있고 원격 서비스(GitHub 등)에 공개키가 등록되어 있는지 확인합니다. (`ssh-keygen`으로 생성, `~/.ssh/id_rsa.pub` 내용 등록)"
+                                ]
+                            }
+                        ]
+                    }
+                ]
+            },
+            {
+                id: "managing-changes",
+                title: "2. 변경사항 관리",
+                description: "파일 수정, 추가, 삭제 등 프로젝트 변경사항을 관리하고 기록하는 명령어들입니다.",
+                commands: [
+                    {
+                        name: "git status",
+                        summary: "리포지토리의 현재 상태를 보여줍니다. 어떤 파일이 수정되었는지, 스테이징 영역에 있는지 등을 확인할 수 있습니다.",
+                        use_case: "작업 중 현재 변경사항을 파악하거나, 커밋 전에 어떤 파일들이 포함될지 확인할 때 유용합니다.",
+                        examples: [
+                            { code: "git status", note: "기본 상태 보기" },
+                            { code: "git status -s", note: "짧은 형식으로 상태 보기 (더 간결함)" },
+                            { code: "git status --ignored", note: "무시된(ignored) 파일들도 함께 표시" }
+                        ]
+                    },
+                    {
+                        name: "git add [파일 이름 또는 경로]",
+                        summary: "수정된 파일이나 새로 추가된 파일을 스테이징 영역(Staging Area)으로 옮깁니다. 커밋할 변경사항을 선택하는 과정입니다.",
+                        use_case: "특정 변경사항들만 선택하여 다음 커밋에 포함시키고 싶을 때 사용합니다.",
+                        examples: [
+                            { code: "git add README.md", note: "README.md 파일만 스테이징" },
+                            { code: "git add src/main.js src/utils.js", note: "여러 파일을 동시에 스테이징" },
+                            { code: "git add src/", note: "src 디렉토리 내의 모든 변경사항 스테이징" },
+                            { code: "git add .", note: "현재 디렉토리의 모든 변경사항(새 파일, 수정된 파일) 스테이징" },
+                            { code: "git add -u", note: "이미 Git이 추적하고 있는 파일들의 수정/삭제 사항만 스테이징 (새 파일은 제외)" },
+                            { code: "git add -A", note: "모든 변경사항(새 파일, 수정, 삭제) 스테이징 (`git add .`과 유사하나 범위가 다를 수 있음)" },
+                            { code: "git add -p", note: "파일 내의 변경된 각 부분을 대화형으로 보면서 스테이징 여부 결정 (매우 유용!)" }
+                        ]
+                    },
+                    {
+                        name: "git commit",
+                        summary: "스테이징 영역에 있는 변경사항들을 하나의 커밋으로 묶어 로컬 리포지토리에 기록합니다. 커밋 메시지는 변경 내용을 요약합니다.",
+                        use_case: "의미 있는 단위로 변경사항을 저장하고, 해당 변경에 대한 설명을 메시지로 남길 때 사용합니다.",
+                        examples: [
+                            { code: 'git commit -m "Add project description to README"', note: "메시지와 함께 바로 커밋" },
+                            { code: "git commit", note: "텍스트 편집기를 열어 커밋 메시지 작성 (더 자세한 메시지 작성 시)" },
+                            { code: 'git commit -am "Refactor login function"', note: "이미 추적 중인 파일의 변경사항을 자동으로 스테이징하고 커밋 (새 파일은 add 필요)" },
+                            { code: "git commit --amend", note: "가장 최근 커밋 수정 (메시지 변경 또는 파일 추가/제외). 아직 push 안 한 커밋에 사용!" },
+                            { code: 'git commit -m "Fix: Correct typo in user model (closes #123)"', note: "커밋 메시지 컨벤션 예시 (이슈 트래커 연동)" }
+                        ],
+                        errors_qa: [
+                            {
+                                scenario: "커밋 후 메시지를 수정하고 싶거나, 빠뜨린 파일을 추가하고 싶을 때 (가장 최근 커밋, 아직 push 전)",
+                                cause: "실수로 잘못된 메시지를 입력했거나, 관련 파일을 함께 커밋하지 못했을 경우.",
+                                solution_steps: [
+                                    "1. (파일 추가 시) `git add 빠뜨린파일.txt`",
+                                    "2. `git commit --amend` 실행",
+                                    "3. 편집기가 열리면 커밋 메시지를 수정하고 저장 후 닫습니다. (파일만 추가/변경 시 메시지 수정 안해도 됨)",
+                                    "주의: `git commit --amend`는 기존 커밋을 대체하는 새 커밋을 만듭니다. 이미 원격에 push한 커밋에는 사용하지 않는 것이 좋습니다."
+                                ]
+                            }
+                        ]
+                    },
+                    {
+                        name: "git diff",
+                        summary: "작업 디렉토리의 변경사항(아직 스테이징되지 않은) 또는 스테이징 영역과 마지막 커밋 간의 차이를 보여줍니다.",
+                        use_case: "커밋 전에 변경 내용을 검토하거나, 특정 시점 간의 코드 변화를 확인할 때 사용합니다.",
+                        examples: [
+                            { code: "git diff", note: "작업 디렉토리와 스테이징 영역 간의 차이 (아직 add 안 한 변경사항)" },
+                            { code: "git diff main.py", note: "특정 파일의 작업 디렉토리와 스테이징 영역 간의 차이" },
+                            { code: "git diff --staged", note: "스테이징 영역과 마지막 커밋 간의 차이 (add 한 변경사항)" },
+                            { code: "git diff HEAD", note: "작업 디렉토리 및 스테이징 영역과 마지막 커밋 간의 모든 변경사항" },
+                            { code: "git diff branch1..branch2", note: "두 브랜치 간의 차이" },
+                            { code: "git diff commit1_hash commit2_hash", note: "두 커밋 간의 차이" },
+                            { code: "git diff --stat", note: "변경사항 통계(파일명, 추가/삭제 라인 수)만 표시" }
+                        ]
+                    }
+                ]
+            },
+            {
+                id: "branching",
+                title: "3. 브랜치 작업",
+                description: "여러 작업을 독립적으로 진행하고 관리하기 위한 브랜치 생성, 전환, 병합 등의 명령어들입니다.",
+                commands: [
+                    {
+                        name: "git branch",
+                        summary: "브랜치 목록을 보여주거나, 새 브랜치를 생성하거나, 브랜치를 삭제합니다.",
+                        use_case: "기능 개발, 버그 수정 등 독립적인 작업을 위해 브랜치를 활용합니다.",
+                        examples: [
+                            { code: "git branch", note: "모든 로컬 브랜치 목록 보기 (*는 현재 브랜치)" },
+                            { code: "git branch -r", note: "모든 원격 추적 브랜치 목록 보기" },
+                            { code: "git branch -a", note: "모든 로컬 및 원격 추적 브랜치 목록 보기" },
+                            { code: "git branch new-feature", note: "새 브랜치 'new-feature' 생성 (전환은 안 함)" },
+                            { code: "git branch -d old-feature", note: "브랜치 'old-feature' 삭제 (병합된 경우에만 안전하게 삭제)" },
+                            { code: "git branch -D old-feature", note: "브랜치 'old-feature' 강제 삭제 (병합 여부와 관계없이 삭제, 주의!)" },
+                            { code: "git branch -m old-name new-name", note: "브랜치 이름 변경 (현재 브랜치가 old-name이 아닐 때)" },
+                            { code: "git branch -m new-name", note: "현재 브랜치 이름 변경" },
+                            { code: "git branch --merged", note: "현재 브랜치에 병합된 브랜치 목록" },
+                            { code: "git branch --no-merged", note: "현재 브랜치에 아직 병합되지 않은 브랜치 목록" }
+                        ]
+                    },
+                    {
+                        name: "git switch / git checkout",
+                        summary: "다른 브랜치로 작업 환경을 전환합니다. `git switch`는 브랜치 전환에, `git checkout`은 브랜치 전환 및 특정 커밋/파일 복원에 사용됩니다. 최신 Git에서는 `switch` 사용이 권장됩니다.",
+                        use_case: "다른 기능이나 버그 수정 작업을 위해 작업 브랜치를 변경할 때 사용합니다.",
+                        examples: [
+                            { code: "git switch develop", note: "'develop' 브랜치로 전환" },
+                            { code: "git checkout feature-branch", note: "'feature-branch' 브랜치로 전환 (구버전 방식)" },
+                            { code: "git switch -c new-feature-branch", note: "새 브랜치 'new-feature-branch'를 만들고 바로 전환" },
+                            { code: "git checkout -b another-new-feature", note: "새 브랜치 만들고 바로 전환 (구버전 방식)" },
+                            { code: "git switch -", note: "이전에 있던 브랜치로 다시 전환" },
+                            { code: "git checkout 특정커밋해시", note: "특정 커밋 시점으로 이동 (Detached HEAD 상태, 주의!)" },
+                            { code: "git checkout main -- myfile.txt", note: "'main' 브랜치의 'myfile.txt' 파일 내용으로 현재 작업 디렉토리의 파일을 덮어쓰기 (특정 파일 복원)" }
+                        ],
+                        errors_qa: [
+                            {
+                                scenario: "오류: `Your local changes to the following files would be overwritten by checkout...`",
+                                cause: "현재 브랜치에 커밋하지 않은 변경사항이 있는데, 다른 브랜치로 전환 시 해당 파일이 덮어씌워질 위험이 있을 때 발생합니다.",
+                                solution_steps: [
+                                    "1. 현재 변경사항을 커밋: `git add .` 한 후 `git commit -m \"임시 저장\"`",
+                                    "2. 현재 변경사항을 임시 저장(스태시): `git stash`",
+                                    "3. 위 방법 중 하나로 변경사항을 처리한 후 다시 `git switch <브랜치이름>` 실행",
+                                    "스태시한 경우, 나중에 `git stash pop`으로 변경사항을 다시 가져올 수 있습니다."
+                                ]
+                            }
+                        ]
+                    },
+                    {
+                        name: "git merge [병합할 브랜치 이름]",
+                        summary: "현재 브랜치에 다른 브랜치의 변경 내용을 병합(합치기)합니다.",
+                        use_case: "기능 개발이 완료된 브랜치(예: feature)의 내용을 주 개발 브랜치(예: develop, main)에 통합할 때 사용합니다.",
+                        examples: [
+                            { code: "git switch main\ngit merge feature-branch", note: "'main' 브랜치로 이동 후 'feature-branch'를 병합" },
+                            { code: "git merge --no-ff feature-branch", note: "Fast-forward 없이 병합하여 병합 커밋을 항상 생성 (브랜치 히스토리 명확화)" },
+                            { code: "git merge --squash feature-branch", note: "'feature-branch'의 모든 커밋을 하나의 커밋으로 합쳐서 현재 브랜치에 적용 (커밋은 수동으로 해야 함)" },
+                            { code: "git merge --abort", note: "병합 중 충돌 발생 시, 병합을 취소하고 이전 상태로 돌아가기" }
+                        ],
+                        errors_qa: [
+                            {
+                                scenario: "오류: `CONFLICT (content): Merge conflict in <filename>`",
+                                cause: "병합하려는 두 브랜치에서 같은 파일의 같은 부분을 다르게 수정한 경우 자동 병합에 실패하여 발생합니다.",
+                                solution_steps: [
+                                    "1. `git status`로 충돌이 발생한 파일들을 확인합니다.",
+                                    "2. 충돌 파일을 열어 `<<<<<<< HEAD`, `=======`, `>>>>>>> branch-name` 마커로 표시된 부분을 직접 수정하여 원하는 코드로 만듭니다.",
+                                    "3. 수정 완료 후 `git add <충돌해결한파일>` 명령으로 스테이징합니다.",
+                                    "4. 모든 충돌을 해결하고 스테이징했다면, `git commit` 명령으로 병합 커밋을 생성합니다. (커밋 메시지는 자동으로 채워지기도 함)"
+                                ]
+                            }
+                        ]
+                    }
+                ]
+            },
+            {
+                id: "remote-repositories",
+                title: "4. 원격 저장소 작업",
+                description: "GitHub과 같은 원격 저장소와 로컬 저장소 간의 변경사항을 동기화하는 명령어들입니다.",
+                commands: [
+                    {
+                        name: "git push",
+                        summary: "로컬 리포지토리의 커밋들을 원격 저장소로 전송(업로드)합니다.",
+                        use_case: "로컬에서 작업한 내용을 다른 팀원들과 공유하거나 백업하기 위해 원격 저장소에 반영할 때 사용합니다.",
+                        examples: [
+                            { code: "git push origin main", note: "로컬 'main' 브랜치를 원격 'origin'의 'main' 브랜치로 푸시" },
+                            { code: "git push", note: "현재 브랜치가 원격 브랜치를 추적하도록 설정된 경우, 해당 원격 브랜치로 푸시" },
+                            { code: "git push -u origin new-feature", note: "새 로컬 브랜치 'new-feature'를 원격 저장소에 처음 푸시하며 업스트림(추적) 연결 설정" },
+                            { code: "git push origin --delete old-remote-branch", note: "원격 저장소의 'old-remote-branch' 브랜치 삭제" },
+                            { code: "git push origin main --force", note: "강제 푸시 (원격 히스토리를 덮어쓰므로 협업 시 매우 신중해야 함!)" },
+                            { code: "git push --tags", note: "로컬의 모든 태그를 원격 저장소로 푸시" }
+                        ],
+                        errors_qa: [
+                            {
+                                scenario: "오류: `failed to push some refs to '...' (non-fast-forward)`",
+                                cause: "원격 저장소에 내가 로컬에 가지고 있지 않은 새로운 커밋이 있어서, 내 로컬 브랜치가 원격 브랜치의 과거 시점을 가리키고 있을 때 발생합니다. (즉, 원격이 더 최신일 때)",
+                                solution_steps: [
+                                    "1. `git pull` 또는 `git fetch` 후 `git rebase origin/main` (또는 현재 브랜치에 맞게) 명령으로 원격 저장소의 최신 변경사항을 먼저 로컬에 반영합니다.",
+                                    "2. 충돌이 발생하면 해결한 후 다시 커밋합니다.",
+                                    "3. 그 다음 `git push`를 다시 시도합니다.",
+                                    "4. (매우 주의) 만약 의도적으로 원격 히스토리를 덮어써야 하는 상황이라면 `git push --force` 또는 `git push --force-with-lease`를 사용할 수 있지만, 팀원과 충분히 소통 후 사용해야 합니다."
+                                ]
+                            },
+                            {
+                                scenario: "오류: `Authentication failed for 'https://...'` 또는 `Permission denied (publickey).`",
+                                cause: "원격 저장소에 접근할 수 있는 인증 정보(사용자 이름/비밀번호, Personal Access Token, SSH 키)가 잘못되었거나 만료된 경우 발생합니다.",
+                                solution_steps: [
+                                    "1. HTTPS 방식: Git Credential Manager에 저장된 정보가 올바른지 확인하거나, Personal Access Token(PAT)을 사용하는 경우 토큰이 유효하고 올바른 권한을 가졌는지 확인합니다. (GitHub 등에서 새로 발급 필요할 수 있음)",
+                                    "2. SSH 방식: SSH 키가 올바르게 설정되어 있고, `ssh-agent`에 등록되어 있으며, 원격 서비스(GitHub 등)에 해당 공개키가 등록되어 있는지 확인합니다."
+                                ]
+                            }
+                        ]
+                    }
+                ]
+            },
+            {
+                id: "ai-assistant",
+                title: "✨ AI 도우미",
+                description: "Gemini AI를 활용하여 Git 작업을 더 편리하게 수행하세요.",
+                ai_features: [
+                    {
+                        name: "AI 커밋 메시지 추천",
+                        feature_id: "commit-message-suggester",
+                        description: "변경 사항에 대한 간단한 설명을 입력하면 AI가 적절한 커밋 메시지를 추천해줍니다.",
+                        input_prompt: "어떤 변경 작업을 하셨나요? (예: 사용자 로그인 기능 추가 및 버그 수정)",
+                        button_text: "✨ 커밋 메시지 추천받기"
+                    }
+                ]
+            },
+            {
+                id: "qa-debugging",
+                title: "7. 자주 발생하는 오류 및 Q&A",
+                description: "Git 사용 중 흔히 접하는 문제들과 그 해결 방법을 안내합니다. 디버깅에 도움이 될 수 있습니다.",
+                qa_items: [
+                    {
+                        question: "Q: `commit` 메시지를 잘못 작성했어요. 수정하고 싶어요. (가장 최근 커밋, 아직 `push` 안 함)",
+                        answer_steps: [
+                            "A: 가장 최근 커밋이고 아직 원격 저장소에 `push`하지 않았다면 `git commit --amend` 명령을 사용합니다.",
+                            "1. (선택사항) 커밋에 포함된 파일을 변경하고 싶다면, 해당 파일을 수정하고 `git add <파일명>`으로 다시 스테이징합니다.",
+                            "2. `git commit --amend`를 실행합니다.",
+                            "3. 텍스트 편집기가 열리면 커밋 메시지를 수정한 후 저장하고 닫습니다. 파일 변경 없이 메시지만 수정하는 것도 가능합니다.",
+                            "이 명령은 이전 커밋을 *대체하는* 새로운 커밋을 만듭니다."
+                        ],
+                        related_commands: ["git commit --amend", "git add"]
+                    },
+                    // ... (기존 Q&A 항목들 유지) ...
+                    {
+                        question: "Q: `.gitignore`에 특정 파일/폴더를 추가했는데도 계속 Git 추적 대상에 포함돼요.",
+                        answer_steps: [
+                            "A: `.gitignore`는 아직 Git이 추적하고 있지 *않은* 파일에 대해서만 적용됩니다. 이미 Git이 추적하고 있는 파일(과거에 add/commit된 파일)은 `.gitignore`에 추가해도 계속 추적됩니다.",
+                            "이런 파일을 Git 추적에서 제외하려면 다음 단계를 따릅니다:",
+                            "1. 먼저 해당 파일/폴더를 Git의 추적 목록에서 제거합니다(로컬 파일은 삭제하지 않음):",
+                            "   `git rm --cached <파일명>` (단일 파일의 경우)",
+                            "   `git rm -r --cached <폴더명>` (폴더의 경우)",
+                            "2. `.gitignore` 파일에 해당 파일/폴더 패턴이 올바르게 작성되어 있는지 확인합니다.",
+                            "3. 변경사항(추적 목록에서 제거된 것과 `.gitignore` 파일 변경)을 커밋합니다: `git commit -m \"Stop tracking <파일명/폴더명> and update .gitignore\"`",
+                            "이제 해당 파일/폴더는 더 이상 Git에 의해 추적되지 않습니다."
+                        ],
+                        related_commands: ["git rm --cached", ".gitignore"]
+                    }
+                ]
+            }
+        ];
+
+        const commandsContainer = document.getElementById('commandsContainer');
+        const searchInput = document.getElementById('searchInput');
+        const tableOfContents = document.getElementById('tableOfContents');
+        const noResultsDiv = document.getElementById('noResults');
+        const sidebar = document.getElementById('sidebar');
+        const mobileMenuButton = document.getElementById('mobileMenuButton');
+
+        async function callGeminiAPI(promptText) {
+            const apiKey = ""; // For gemini-2.0-flash, API key is not strictly required in some environments if proxied.
+            const apiUrl = `https://generativelanguage.googleapis.com/v1beta/models/gemini-2.0-flash:generateContent?key=${apiKey}`;
+
+            const payload = {
+                contents: [{ role: "user", parts: [{ text: promptText }] }]
+            };
+
+            try {
+                const response = await fetch(apiUrl, {
+                    method: 'POST',
+                    headers: { 'Content-Type': 'application/json' },
+                    body: JSON.stringify(payload)
+                });
+                if (!response.ok) {
+                    const errorBody = await response.text();
+                    console.error("Gemini API Error Response:", errorBody);
+                    throw new Error(`HTTP error! status: ${response.status}, message: ${errorBody}`);
+                }
+                const result = await response.json();
+                if (result.candidates && result.candidates.length > 0 &&
+                    result.candidates[0].content && result.candidates[0].content.parts &&
+                    result.candidates[0].content.parts.length > 0) {
+                    return result.candidates[0].content.parts[0].text;
+                } else {
+                    console.error("Unexpected Gemini API response structure:", result);
+                    return "죄송합니다. AI로부터 응답을 받지 못했습니다. 응답 구조를 확인해주세요.";
+                }
+            } catch (error) {
+                console.error("Error calling Gemini API:", error);
+                return "죄송합니다. AI 호출 중 오류가 발생했습니다. 콘솔을 확인해주세요.";
+            }
+        }
+
+
+        function createCommandExampleHTML(example) {
+            const uniqueId = `code-${Math.random().toString(36).substr(2, 9)}`;
+            let html = '';
+            if (example.note) {
+                html += `<p class="example-note">${example.note}</p>`;
+            }
+            html += `
+                <div class="relative code-block p-4 rounded-md mt-1 text-sm overflow-x-auto">
+                    <pre><code id="${uniqueId}" class="language-bash">${example.code.replace(/</g, "&lt;").replace(/>/g, "&gt;")}</code></pre>
+                    <button 
+                        onclick="copyToClipboard('${uniqueId}', this)" 
+                        class="copy-btn absolute top-2 right-2 px-2 py-1 text-xs rounded-md transition-colors">
+                        복사
+                    </button>
+                </div>`;
+            return html;
+        }
+
+        function createErrorQaHTML(errorItem) {
+            let stepsHTML = errorItem.solution_steps.map(step => `<li class="mt-1">${step.replace(/`(.*?)`/g, '<code class="bg-gray-200 px-1 rounded text-sm">$1</code>')}</li>`).join('');
+            return `
+                <div class="mt-4 p-4 border border-red-200 rounded-md bg-red-50 error-section">
+                    <h5 class="font-semibold text-red-700">오류 시나리오: ${errorItem.scenario}</h5>
+                    <p class="text-sm text-gray-700 mt-1"><strong>원인:</strong> ${errorItem.cause}</p>
+                    <div class="mt-2 solution-section">
+                        <h5 class="font-semibold text-green-700">해결 방안:</h5>
+                        <ul class="list-disc list-inside text-sm text-gray-700 mt-1">
+                            ${stepsHTML}
+                        </ul>
+                    </div>
+                </div>`;
+        }
+
+        function createCommandCard(command, sectionId) {
+            const article = document.createElement('article');
+            article.className = 'command-card p-6 rounded-xl shadow-lg transition-shadow hover:shadow-xl fade-in';
+            article.dataset.commandName = command.name.toLowerCase();
+            article.dataset.commandSummary = command.summary.toLowerCase();
+
+            let examplesHTML = command.examples.map(createCommandExampleHTML).join('<div class="my-2"></div>');
+            let errorsHTML = command.errors_qa ? command.errors_qa.map(createErrorQaHTML).join('') : '';
+
+            const moreExamplesContainerId = `more-examples-${sectionId}-${command.name.replace(/\s+/g, '-').replace(/[\[\]/\s]/g, '').toLowerCase()}`;
+
+            article.innerHTML = `
+                <header>
+                    <h3 class="text-2xl font-semibold text-00796b" id="${sectionId}-${command.name.replace(/\s+/g, '-').replace(/[\[\]/\s]/g, '').toLowerCase()}">${command.name}</h3>
+                </header>
+                <p class="mt-2 text-gray-600">${command.summary}</p>
+                <div class="mt-4">
+                    <h4 class="font-semibold text-gray-700">사용 예시 케이스:</h4>
+                    <p class="mt-1 text-sm text-gray-600 whitespace-pre-line">${command.use_case}</p>
+                </div>
+                <div class="mt-4">
+                    <h4 class="font-semibold text-gray-700">명령어 예시:</h4>
+                    ${examplesHTML}
+                </div>
+                ${errorsHTML}
+                <div class="mt-4">
+                    <button onclick="fetchMoreExamples('${command.name}', '${moreExamplesContainerId}', this)" class="ai-btn px-3 py-1.5 text-sm rounded-md transition-colors">
+                        ✨ 사용 사례 더 보기
+                    </button>
+                    <div id="${moreExamplesContainerId}" class="mt-2"></div>
+                </div>
+            `;
+            return article;
+        }
+
+        window.fetchMoreExamples = async function (commandName, containerId, button) {
+            const container = document.getElementById(containerId);
+            const originalButtonText = button.innerHTML;
+            button.innerHTML = '<div class="loader_small" style="width:16px; height:16px; border-width:2px; display:inline-block; margin-right:5px;"></div> 생성 중...';
+            button.disabled = true;
+
+            const prompt = `Git 명령어 '${commandName}'에 대한 다양하고 실용적인 추가 사용 예시를 2가지 알려주세요. 각 예시는 명령어와 간단한 한글 설명을 포함해야 합니다. 마크다운 코드 블록 형식을 사용하고, 설명은 코드 블록 외부에 작성해주세요. 기존 예시와는 다른 새로운 활용법 중심으로 알려주세요.`;
+            try {
+                const resultText = await callGeminiAPI(prompt);
+                // Basic parsing for markdown-like code blocks and notes
+                let htmlResult = resultText.split('\n\n').map(paragraph => {
+                    if (paragraph.startsWith('```bash')) {
+                        const code = paragraph.replace(/```bash\n|```/g, '').trim();
+                        return createCommandExampleHTML({ code: code, note: '' }); // Note will be outside
+                    } else if (paragraph.startsWith('```')) { // Generic code block
+                        const code = paragraph.replace(/```.*\n|```/g, '').trim();
+                        return createCommandExampleHTML({ code: code, note: '' });
+                    }
+                    return `<p class="text-sm text-gray-600 mt-1">${paragraph.replace(/</g, "&lt;").replace(/>/g, "&gt;")}</p>`;
+                }).join('');
+                container.innerHTML = `<div class="gemini-output">${htmlResult || 'AI로부터 추가 예시를 가져오지 못했습니다.'}</div>`;
+            } catch (error) {
+                container.innerHTML = `<div class="gemini-output text-red-600">오류: 추가 예시를 가져오는 데 실패했습니다.</div>`;
+            } finally {
+                button.innerHTML = originalButtonText;
+                button.disabled = false;
+            }
+        }
+
+
+        function createAICard(feature, sectionId) {
+            const article = document.createElement('article');
+            article.className = 'ai-card p-6 rounded-xl shadow-lg fade-in';
+
+            const outputContainerId = `ai-output-${feature.feature_id}`;
+            const inputId = `ai-input-${feature.feature_id}`;
+
+            article.innerHTML = `
+                <header>
+                    <h3 class="text-2xl font-semibold text-00796b" id="${sectionId}-${feature.feature_id}">${feature.name}</h3>
+                </header>
+                <p class="mt-2 text-gray-600">${feature.description}</p>
+                <div class="mt-4">
+                    <label for="${inputId}" class="block text-sm font-medium text-gray-700">${feature.input_prompt}</label>
+                    <textarea id="${inputId}" rows="3" class="mt-1 block w-full p-2 border border-gray-300 rounded-md shadow-sm focus:ring-00796b focus:border-00796b sm:text-sm"></textarea>
+                </div>
+                <div class="mt-4">
+                    <button onclick="handleAIFeature('${feature.feature_id}', '${inputId}', '${outputContainerId}', this)" class="ai-btn px-4 py-2 text-sm rounded-md transition-colors">
+                        ${feature.button_text}
+                    </button>
+                </div>
+                <div id="${outputContainerId}" class="mt-3"></div>
+            `;
+            return article;
+        }
+
+        window.handleAIFeature = async function (featureId, inputId, outputId, button) {
+            const userInput = document.getElementById(inputId).value;
+            const outputContainer = document.getElementById(outputId);
+
+            if (!userInput.trim()) {
+                outputContainer.innerHTML = `<p class="text-red-600">내용을 입력해주세요.</p>`;
+                return;
+            }
+
+            const originalButtonText = button.innerHTML;
+            button.innerHTML = '<div class="loader" style="width:20px; height:20px; border-width:3px; display:inline-block; margin-right:8px;"></div> 생성 중...';
+            button.disabled = true;
+            outputContainer.innerHTML = '';
+
+
+            let promptText = "";
+            if (featureId === "commit-message-suggester") {
+                promptText = `다음 변경 사항에 대한 Git 커밋 메시지 초안을 Conventional Commits 양식에 맞춰 한글로 작성해주세요: "${userInput}". 메시지는 간결하고 명확해야 합니다. 여러 개를 제안할 경우, 각 메시지 앞에 '-'를 붙여주세요.`;
+            }
+
+            try {
+                const resultText = await callGeminiAPI(promptText);
+                // Format as a code block if it looks like a commit message
+                let formattedResult = resultText.split('\n').map(line => {
+                    if (line.match(/^(feat|fix|docs|style|refactor|test|chore|build|ci)(\(.+\))?:/i) || line.startsWith('- ')) {
+                        return `<div class="relative code-block p-3 rounded-md mt-1 text-sm overflow-x-auto">
+                                    <pre><code>${line.replace(/</g, "&lt;").replace(/>/g, "&gt;")}</code></pre>
+                                 </div>`;
+                    }
+                    return `<p>${line.replace(/</g, "&lt;").replace(/>/g, "&gt;")}</p>`;
+                }).join('');
+
+                outputContainer.innerHTML = `<div class="gemini-output">${formattedResult || 'AI로부터 응답을 받지 못했습니다.'}</div>`;
+            } catch (error) {
+                outputContainer.innerHTML = `<div class="gemini-output text-red-600">오류: AI 기능 처리 중 문제가 발생했습니다.</div>`;
+            } finally {
+                button.innerHTML = originalButtonText;
+                button.disabled = false;
+            }
+        }
+
+
+        function createQAItemCard(qaItem, sectionId) {
+            const article = document.createElement('article');
+            article.className = 'qa-card p-6 rounded-xl shadow-lg transition-shadow hover:shadow-xl fade-in';
+            article.dataset.qaQuestion = qaItem.question.toLowerCase();
+
+            let answerStepsHTML = qaItem.answer_steps.map(step => {
+                const formattedStep = step.replace(/`([^`]+)`/g, '<code class="bg-gray-200 text-sm px-1 rounded">$1</code>');
+                return `<li class="mt-1 text-gray-700">${formattedStep}</li>`;
+            }).join('');
+
+            let relatedCommandsHTML = '';
+            if (qaItem.related_commands && qaItem.related_commands.length > 0) {
+                relatedCommandsHTML = `<p class="mt-2 text-xs text-gray-500">관련 명령어: ${qaItem.related_commands.map(cmd => `<code class="bg-gray-100 px-1 rounded">${cmd}</code>`).join(', ')}</p>`;
+            }
+
+            const qaItemId = `${sectionId}-q-${qaItem.question.substring(0, 30).replace(/\s+/g, '-').replace(/[^\w-]/g, '').toLowerCase()}`;
+
+            article.innerHTML = `
+                <header>
+                    <h4 class="text-xl font-semibold text-00796b" id="${qaItemId}">${qaItem.question}</h4>
+                </header>
+                <div class="mt-3">
+                    <ul class="list-disc list-inside pl-2 space-y-1">
+                        ${answerStepsHTML}
+                    </ul>
+                    ${relatedCommandsHTML}
+                </div>
+            `;
+            return article;
+        }
+
+        function displayCommands(filter = '') {
+            commandsContainer.innerHTML = '';
+            let hasResults = false;
+            const lowerFilter = filter.toLowerCase();
+
+            gitCommandsData.forEach(section => {
+                const sectionElement = document.createElement('section');
+                sectionElement.id = section.id;
+                sectionElement.className = 'mb-12 pt-4';
+
+                const sectionTitleElement = document.createElement('h2');
+                sectionTitleElement.className = 'text-3xl font-bold text-gray-700 border-b-2 border-00796b pb-2 mb-6';
+                sectionTitleElement.textContent = section.title;
+
+                let sectionHasContent = false;
+                // Always add description if it exists, before title for AI section
+                if (section.description) {
+                    const sectionDescriptionElement = document.createElement('p');
+                    sectionDescriptionElement.className = 'text-md text-gray-600 mb-6 italic';
+                    sectionDescriptionElement.textContent = section.description;
+                    sectionElement.appendChild(sectionDescriptionElement);
+                }
+
+
+                if (section.commands) {
+                    const filteredCommands = section.commands.filter(cmd =>
+                        filter === '' ||
+                        cmd.name.toLowerCase().includes(lowerFilter) ||
+                        cmd.summary.toLowerCase().includes(lowerFilter) ||
+                        (cmd.use_case && cmd.use_case.toLowerCase().includes(lowerFilter)) ||
+                        (cmd.errors_qa && cmd.errors_qa.some(err => err.scenario.toLowerCase().includes(lowerFilter) || err.cause.toLowerCase().includes(lowerFilter)))
+                    );
+
+                    if (filteredCommands.length > 0) {
+                        if (!sectionElement.contains(sectionTitleElement)) sectionElement.insertBefore(sectionTitleElement, sectionElement.firstChild);
+                        filteredCommands.forEach(cmd => {
+                            sectionElement.appendChild(createCommandCard(cmd, section.id));
+                        });
+                        sectionHasContent = true;
+                    }
+                }
+
+                if (section.ai_features) {
+                    const filteredAIFeatures = section.ai_features.filter(feat =>
+                        filter === '' ||
+                        feat.name.toLowerCase().includes(lowerFilter) ||
+                        feat.description.toLowerCase().includes(lowerFilter)
+                    );
+                    if (filteredAIFeatures.length > 0) {
+                        if (!sectionElement.contains(sectionTitleElement)) sectionElement.insertBefore(sectionTitleElement, sectionElement.firstChild);
+                        filteredAIFeatures.forEach(feat => {
+                            sectionElement.appendChild(createAICard(feat, section.id));
+                        });
+                        sectionHasContent = true;
+                    }
+                }
+
+
+                if (section.qa_items) {
+                    const filteredQAItems = section.qa_items.filter(item =>
+                        filter === '' ||
+                        item.question.toLowerCase().includes(lowerFilter) ||
+                        item.answer_steps.some(step => step.toLowerCase().includes(lowerFilter))
+                    );
+                    if (filteredQAItems.length > 0) {
+                        if (!sectionElement.contains(sectionTitleElement)) sectionElement.insertBefore(sectionTitleElement, sectionElement.firstChild);
+                        filteredQAItems.forEach(item => {
+                            sectionElement.appendChild(createQAItemCard(item, section.id));
+                        });
+                        sectionHasContent = true;
+                    }
+                }
+
+                if (sectionHasContent) {
+                    commandsContainer.appendChild(sectionElement);
+                    hasResults = true;
+                }
+            });
+            noResultsDiv.classList.toggle('hidden', hasResults);
+        }
+
+        function populateTOC() {
+            const tocList = document.createElement('ul');
+            gitCommandsData.forEach(section => {
+                const sectionItem = document.createElement('li');
+                sectionItem.className = 'mb-1';
+                const sectionLink = document.createElement('a');
+                sectionLink.href = `#${section.id}`;
+                sectionLink.textContent = section.title;
+                sectionLink.className = 'block font-semibold text-slate-700 hover:text-00796b py-1.5 px-2 rounded-md transition-colors text-sm';
+                sectionLink.onclick = function (e) {
+                    e.preventDefault();
+                    document.getElementById(section.id)?.scrollIntoView({ behavior: 'smooth' });
+                    if (window.innerWidth < 768) {
+                        sidebar.classList.add('-translate-x-full');
+                    }
+                    document.querySelectorAll('#tableOfContents a').forEach(link => link.classList.remove('active-link'));
+                    sectionLink.classList.add('active-link');
+                };
+                sectionItem.appendChild(sectionLink);
+
+                if (section.commands && section.commands.length > 0) {
+                    const commandSubList = document.createElement('ul');
+                    commandSubList.className = 'ml-3 mt-1 text-xs';
+                    section.commands.forEach(command => {
+                        const commandItem = document.createElement('li');
+                        const commandLink = document.createElement('a');
+                        const commandAnchorId = `${section.id}-${command.name.replace(/\s+/g, '-').replace(/[\[\]/\s]/g, '').toLowerCase()}`;
+                        commandLink.href = `#${commandAnchorId}`;
+                        commandLink.textContent = command.name;
+                        commandLink.className = 'block text-slate-600 hover:text-00796b py-0.5 px-2 rounded-md';
+                        commandLink.onclick = function (e) {
+                            e.preventDefault();
+                            document.getElementById(commandAnchorId)?.scrollIntoView({ behavior: 'smooth' });
+                            if (window.innerWidth < 768) {
+                                sidebar.classList.add('-translate-x-full');
+                            }
+                            document.querySelectorAll('#tableOfContents a').forEach(link => link.classList.remove('active-link'));
+                            sectionLink.classList.add('active-link');
+                        };
+                        commandItem.appendChild(commandLink);
+                        commandSubList.appendChild(commandItem);
+                    });
+                    sectionItem.appendChild(commandSubList);
+                }
+                tocList.appendChild(sectionItem);
+            });
+            tableOfContents.appendChild(tocList);
+        }
+
+        window.copyToClipboard = function (elementId, button) {
+            const codeElement = document.getElementById(elementId);
+            const textToCopy = codeElement.innerText;
+
+            try {
+                const textarea = document.createElement('textarea');
+                textarea.value = textToCopy;
+                document.body.appendChild(textarea);
+                textarea.select();
+                document.execCommand('copy');
+                document.body.removeChild(textarea);
+
+                button.textContent = '복사됨!';
+                setTimeout(() => { button.textContent = '복사'; }, 2000);
+            } catch (err) {
+                console.error('Failed to copy: ', err);
+                button.textContent = '실패';
+                setTimeout(() => { button.textContent = '복사'; }, 2000);
+            }
+        }
+
+        searchInput.addEventListener('input', (e) => {
+            displayCommands(e.target.value);
+        });
+
+        mobileMenuButton.addEventListener('click', () => {
+            sidebar.classList.toggle('-translate-x-full');
+        });
+
+        document.addEventListener('click', function (event) {
+            const isClickInsideSidebar = sidebar.contains(event.target);
+            const isClickOnMenuButton = mobileMenuButton.contains(event.target);
+
+            if (window.innerWidth < 768 && !isClickInsideSidebar && !isClickOnMenuButton && !sidebar.classList.contains('-translate-x-full')) {
+                sidebar.classList.add('-translate-x-full');
+            }
+        });
+
+        populateTOC();
+        displayCommands();
+
+        const mainContent = document.querySelector('main');
+        let scrollTimeout;
+        mainContent.addEventListener('scroll', () => {
+            clearTimeout(scrollTimeout);
+            scrollTimeout = setTimeout(() => {
+                let currentSectionId = '';
+                let minDistance = Infinity;
+
+                [...gitCommandsData].reverse().forEach(section => {
+                    const element = document.getElementById(section.id);
+                    if (element) {
+                        const rect = element.getBoundingClientRect();
+                        if (rect.top < window.innerHeight && rect.bottom > 0) {
+                            if (rect.top < minDistance && rect.top < 200) {
+                                minDistance = rect.top;
+                                currentSectionId = section.id;
+                            }
+                        }
+                    }
+                });
+
+                if (!currentSectionId) {
+                    for (const section of gitCommandsData) {
+                        const element = document.getElementById(section.id);
+                        if (element) {
+                            const rect = element.getBoundingClientRect();
+                            if (rect.top < window.innerHeight && rect.bottom > 0) {
+                                currentSectionId = section.id;
+                                break;
+                            }
+                        }
+                    }
+                }
+
+                document.querySelectorAll('#tableOfContents a').forEach(link => {
+                    link.classList.remove('active-link');
+                    const linkHref = link.getAttribute('href');
+                    if (linkHref === `#${currentSectionId}`) {
+                        link.classList.add('active-link');
+                        const tocRect = tableOfContents.getBoundingClientRect();
+                        const linkRect = link.getBoundingClientRect();
+                        if (linkRect.bottom > tocRect.bottom || linkRect.top < tocRect.top) {
+                            link.scrollIntoView({ behavior: 'smooth', block: 'nearest' });
+                        }
+                    }
+                });
+            }, 100);
+        }, { passive: true });
+    </script>
+</body>
+
+</html>
