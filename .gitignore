@@ -1,0 +1,14 @@
+**/*.zip
+**/*.gzip
+**/*.tar.xz
+**/*.log
+**/*.env
+**/*.swp
+**/*.o
+**/*.jar
+**/*.venv
+**/*.cache
+**/node_modules
+**/dist/
+**/.vscode/
+**/.windsurf/
